@@ -123,13 +123,19 @@ public class UpdateShippedCode implements IWorkflowComponent {
 		// step 2: create/clean the "shipped-code" folder
 		println("==== STEP 2/4: cleaning folder " + actualTargetPath);
 		initFolder(actualTargetPath.toFile());
-		// step 3: copy all projects from top-level folder "n4js-libs" to folder "shipped-code" inside our bundle
+		// step 3a: copy all projects from top-level folder "n4js-libs" to folder "shipped-code" inside our bundle
 		println("==== STEP 3/4: copying all code from top-level folder \"" + N4JSGlobals.N4JS_LIBS_FOLDER_NAME
 				+ "\" to target folder");
 		println("    FROM: " + n4jsLibsRoot);
 		println("    TO  : " + actualTargetPath);
 		final File[] n4jsLibsSubfolders = n4jsLibsRoot.listFiles(file -> file.isDirectory());
 		copyN4jsLibsToShippedCodeFolder(n4jsLibsSubfolders, actualTargetPath);
+		// Step 3b: Copy lerna.json and package.json from n4js-libs folder to shipped-code folder
+		final File[] jsonFiles = n4jsLibsRoot.listFiles(file -> file.isFile()
+				&& (file.getName().equals("lerna.json") || file.getName().equals("package.json")));
+		for (File jsonFile : jsonFiles) {
+			FileCopier.copy(jsonFile.toPath(), actualTargetPath.resolve(jsonFile.getName()));
+		}
 		// step 4: run "npm install" in project "n4js-node"
 		println("==== STEP 4/4: running \"" + N4JSGlobals.NPM_INSTALL + "\" in runtime project \""
 				+ N4JS_NODE_PROJECT_NAME + "\"");
