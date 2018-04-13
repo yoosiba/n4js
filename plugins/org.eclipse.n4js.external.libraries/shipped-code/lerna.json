@@ -1,9 +1,7 @@
 {
   "lerna": "2.10.0",
-  "packages": [
-    "lang/*",
-	"runtime/*",
-	"mangelhaft/*"
-  ],
-  "version": "0.0.0"
+  "npmClient": "yarn",
+  "loglevel": "verbose",
+  "version": "0.1.1",
+  "useWorkspaces": true
 }
