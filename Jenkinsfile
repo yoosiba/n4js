@@ -98,9 +98,28 @@ timestamps {
                             }
                         }
                     }
+
+                    withCredentials([
+                        string(credentialsId: npm_auth_token_id, variable: 'NPM_TOKEN')
+                    ]) {
+                      sh """
+                        docker run --rm \
+                                   -u \$(id -u):\$(id -g) \
+                                   -v \$(pwd):/opr \
+                                   -e HOME=/opr \
+                                   -e NPM_TOKEN=\${NPM_TOKEN} \
+                                   -e NPM_REGISTRY=${npm_registry} \
+                                   -e OPR_NPM_VERSION_PREFIX=${npm_version_prefix} \
+                                   ${image.imageName()} \
+                                   /opr/bin/opr-build.sh \
+                                   --publish-canary
+                        docker image rm ${image.imageName()}
+                      """
+                    }
                 }
 
                 stage('PostBuild') {
+
                 }
                 //sendEmail("${env.JOB_NAME} (${env.BUILD_NUMBER}) succeeded", "${env.BUILD_URL} succeeded - ${env.JOB_NAME} (#${env.BUILD_NUMBER}).")
             } catch (exc) {
