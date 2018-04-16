@@ -6,7 +6,7 @@
 		"n4js-prepare-npm": "latest"
 	},
 	"scripts": {
-		"publish-canary": "./bin/npm-publish-canary.sh"
+		"publish-canary": "./npm-publish-canary.sh"
 	},
 	"workspaces": [
 		"lang/*",

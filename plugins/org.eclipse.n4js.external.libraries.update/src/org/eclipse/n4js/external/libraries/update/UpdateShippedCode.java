@@ -130,9 +130,9 @@ public class UpdateShippedCode implements IWorkflowComponent {
 		println("    TO  : " + actualTargetPath);
 		final File[] n4jsLibsSubfolders = n4jsLibsRoot.listFiles(file -> file.isDirectory());
 		copyN4jsLibsToShippedCodeFolder(n4jsLibsSubfolders, actualTargetPath);
-		// Step 3b: Copy lerna.json and package.json from n4js-libs folder to shipped-code folder
+		// Step 3b: Copy lerna.json, package.json and .sh files from n4js-libs folder to shipped-code folder
 		final File[] jsonFiles = n4jsLibsRoot.listFiles(file -> file.isFile()
-				&& (file.getName().equals("lerna.json") || file.getName().equals("package.json")));
+				&& (file.getName().endsWith(".json") || file.getName().endsWith(".sh")));
 		for (File jsonFile : jsonFiles) {
 			FileCopier.copy(jsonFile.toPath(), actualTargetPath.resolve(jsonFile.getName()));
 		}
