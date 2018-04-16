@@ -10,27 +10,5 @@
   "files": [
     "manifest.n4mf",
     "src-gen"
-  ],
-  "n4js_manifest": {
-    "ProjectId": "n4js-es5",
-    "VendorId": "org.eclipse.n4js",
-    "VendorName": "Eclipse N4JS Project",
-    "ProjectType": "runtimeEnvironment",
-    "ProjectVersion": "0.3.2",
-    "Output": "src-gen",
-    "Sources": {
-      "external": [
-        "\"src/js\""
-      ]
-    },
-    "InitModules": [
-      "\"rt\""
-    ],
-    "ModuleFilters": {
-      "noModuleWrap": [
-        "\"**\""
-      ]
-    }
-  },
-  "version": "0.1.1"
+  ]
 }

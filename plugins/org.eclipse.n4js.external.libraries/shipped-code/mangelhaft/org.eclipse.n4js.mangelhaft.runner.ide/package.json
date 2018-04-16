@@ -10,39 +10,5 @@
   ],
   "engines": {
     "node": ">= 5.0.0"
-  },
-  "name": "org.eclipse.n4js.mangelhaft.runner.ide",
-  "dependencies": {
-    "n4js-node": "latest",
-    "n4js.lang": "latest",
-    "org.eclipse.n4js.mangelhaft": "latest",
-    "org.eclipse.n4js.mangelhaft.reporter.ide": "latest"
-  },
-  "devDependencies": {
-    "n4js-runtime-fetch": "latest",
-    "n4js-runtime-n4": "latest"
-  },
-  "n4js_manifest": {
-    "ProjectId": "org.eclipse.n4js.mangelhaft.runner.ide",
-    "VendorId": "org.eclipse.n4js",
-    "VendorName": "Eclipse N4JS Project",
-    "ProjectType": "library",
-    "ProjectVersion": "0.3.2",
-    "Output": "src-gen",
-    "Sources": {
-      "source": [
-        "\"src/n4js\""
-      ]
-    },
-    "RequiredRuntimeLibraries": [
-      "n4js-runtime-n4",
-      "n4js-runtime-fetch"
-    ],
-    "ProjectDependencies": [
-      "n4js.lang",
-      "org.eclipse.n4js.mangelhaft",
-      "org.eclipse.n4js.mangelhaft.reporter.ide"
-    ]
-  },
-  "version": "0.1.1"
+  }
 }

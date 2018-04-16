@@ -1,5 +1,16 @@
 {
+	"author": "Enfore AG",
+	"private": true,
 	"devDependencies": {
-		"lerna": "^2.10.0"
-	}
+		"lerna": "^2.10.0",
+		"n4js-prepare-npm": "latest"
+	},
+	"scripts": {
+		"publish-canary": "./bin/npm-publish-canary.sh"
+	},
+	"workspaces": [
+		"lang/*",
+		"runtime/*",
+		"mangelhaft/*"
+	]
 }
