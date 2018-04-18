@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Start publishing shipped code npms"
+
 # Navigate to shipped-code folder
 cd `dirname $0`/plugins/org.eclipse.n4js.external.libraries/shipped-code
 
@@ -10,3 +12,5 @@ yarn install
 
 # Run npm task script 'publish-canary'
 yarn run publish-canary
+
+echo "End publishing shipped code npms"
