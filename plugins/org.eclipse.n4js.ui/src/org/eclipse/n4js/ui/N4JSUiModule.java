@@ -16,11 +16,14 @@ import org.eclipse.jface.text.hyperlink.IHyperlinkDetector;
 import org.eclipse.jface.text.rules.IPartitionTokenScanner;
 import org.eclipse.jface.text.rules.ITokenScanner;
 import org.eclipse.n4js.CancelIndicatorBaseExtractor;
-import org.eclipse.n4js.N4JSRuntimeModule;
 import org.eclipse.n4js.binaries.BinariesPreferenceStore;
 import org.eclipse.n4js.binaries.OsgiBinariesPreferenceStore;
+import org.eclipse.n4js.external.ExternalIndexSynchronizer;
 import org.eclipse.n4js.external.ExternalLibraryWorkspace;
+import org.eclipse.n4js.external.ExternalProjectsCollector;
 import org.eclipse.n4js.external.GitCloneSupplier;
+import org.eclipse.n4js.external.NpmLogger;
+import org.eclipse.n4js.external.RebuildWorkspaceProjectsScheduler;
 import org.eclipse.n4js.external.TargetPlatformInstallLocationProvider;
 import org.eclipse.n4js.external.TypeDefinitionGitLocationProvider;
 import org.eclipse.n4js.findReferences.ConcreteSyntaxAwareReferenceFinder;
@@ -63,10 +66,21 @@ import org.eclipse.n4js.ui.editor.syntaxcoloring.TemplateAwarePartitionTokenScan
 import org.eclipse.n4js.ui.editor.syntaxcoloring.TemplateAwareTokenScanner;
 import org.eclipse.n4js.ui.editor.syntaxcoloring.TokenToAttributeIdMapper;
 import org.eclipse.n4js.ui.editor.syntaxcoloring.TokenTypeToPartitionMapper;
+import org.eclipse.n4js.ui.external.BuildOrderComputer;
+import org.eclipse.n4js.ui.external.EclipseExternalIndexSynchronizer;
+import org.eclipse.n4js.ui.external.EclipseExternalLibraryWorkspace;
+import org.eclipse.n4js.ui.external.ExternalIndexUpdater;
+import org.eclipse.n4js.ui.external.ExternalLibraryBuildJobProvider;
+import org.eclipse.n4js.ui.external.ExternalLibraryBuilder;
+import org.eclipse.n4js.ui.external.ExternalProjectProvider;
+import org.eclipse.n4js.ui.external.ProjectStateChangeListener;
 import org.eclipse.n4js.ui.formatting2.FixedContentFormatter;
 import org.eclipse.n4js.ui.generator.GeneratorMarkerSupport;
 import org.eclipse.n4js.ui.internal.ConsoleOutputStreamProvider;
+import org.eclipse.n4js.ui.internal.ContributingModule;
 import org.eclipse.n4js.ui.internal.EclipseBasedN4JSWorkspace;
+import org.eclipse.n4js.ui.internal.ExternalProjectCacheLoader;
+import org.eclipse.n4js.ui.internal.N4JSEclipseCore;
 import org.eclipse.n4js.ui.labeling.N4JSContentAssistLabelProvider;
 import org.eclipse.n4js.ui.labeling.N4JSHoverProvider;
 import org.eclipse.n4js.ui.labeling.N4JSHyperlinkLabelProvider;
@@ -84,6 +98,7 @@ import org.eclipse.n4js.ui.quickfix.N4JSIssue;
 import org.eclipse.n4js.ui.quickfix.N4JSMarkerResolutionGenerator;
 import org.eclipse.n4js.ui.resource.OutputFolderAwareResourceServiceProvider;
 import org.eclipse.n4js.ui.search.LabellingReferenceFinder;
+import org.eclipse.n4js.ui.search.MyReferenceSearchResultContentProvider;
 import org.eclipse.n4js.ui.search.N4JSEditorResourceAccess;
 import org.eclipse.n4js.ui.search.N4JSReferenceQueryExecutor;
 import org.eclipse.n4js.ui.utils.CancelIndicatorUiExtractor;
@@ -117,6 +132,7 @@ import org.eclipse.xtext.ui.editor.contentassist.IContentAssistantFactory;
 import org.eclipse.xtext.ui.editor.contentassist.PrefixMatcher;
 import org.eclipse.xtext.ui.editor.doubleClicking.DoubleClickStrategyProvider;
 import org.eclipse.xtext.ui.editor.findrefs.EditorResourceAccess;
+import org.eclipse.xtext.ui.editor.findrefs.ReferenceSearchResultContentProvider;
 import org.eclipse.xtext.ui.editor.formatting2.ContentFormatter;
 import org.eclipse.xtext.ui.editor.hover.IEObjectHover;
 import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider;
@@ -135,6 +151,7 @@ import org.eclipse.xtext.ui.editor.reconciler.XtextReconciler;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.AbstractAntlrTokenToAttributeIdMapper;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingHelper;
+import org.eclipse.xtext.ui.editor.validation.MarkerCreator;
 import org.eclipse.xtext.ui.resource.DefaultResourceUIServiceProvider;
 import org.eclipse.xtext.ui.shared.Access;
 import org.eclipse.xtext.ui.util.IssueUtil;
@@ -174,11 +191,43 @@ public class N4JSUiModule extends org.eclipse.n4js.ui.AbstractN4JSUiModule {
 	}
 
 	/**
-	 * Re-binds the {@link Singleton @Singleton} {@link ExternalLibraryWorkspace N4JS external library workspace}
-	 * instance declared and created in the {@link N4JSRuntimeModule}.
+	 * Re-binds the {@link Singleton @Singleton} {@link MarkerCreator} instance declared and created in the
+	 * {@link ContributingModule}.
 	 */
-	public Provider<ExternalLibraryWorkspace> provideN4JSExternalLibraryWorkspace() {
+	public Provider<MarkerCreator> provideMarkerCreator() {
+		return Access.contributedProvider(MarkerCreator.class);
+	}
+
+	/**
+	 * Re-binds the {@link Singleton @Singleton} {@link ExternalLibraryWorkspace} instance declared and created in the
+	 * {@link ContributingModule}.
+	 */
+	public Provider<ExternalLibraryWorkspace> provideExternalLibraryWorkspace() {
 		return Access.contributedProvider(ExternalLibraryWorkspace.class);
+	}
+
+	/**
+	 * Re-binds the {@link Singleton @Singleton} {@link EclipseExternalLibraryWorkspace} instance declared and created
+	 * in the {@link ContributingModule}.
+	 */
+	public Provider<EclipseExternalLibraryWorkspace> provideEclipseExternalLibraryWorkspace() {
+		return Access.contributedProvider(EclipseExternalLibraryWorkspace.class);
+	}
+
+	/**
+	 * Re-binds the {@link Singleton @Singleton} {@link ExternalIndexSynchronizer} instance declared and created in the
+	 * {@link ContributingModule}.
+	 */
+	public Provider<ExternalIndexSynchronizer> provideExternalIndexSynchronizer() {
+		return Access.contributedProvider(ExternalIndexSynchronizer.class);
+	}
+
+	/**
+	 * Re-binds the {@link Singleton @Singleton} {@link EclipseExternalIndexSynchronizer} instance declared and created
+	 * in the {@link ContributingModule}.
+	 */
+	public Provider<EclipseExternalIndexSynchronizer> provideEclipseExternalIndexSynchronizer() {
+		return Access.contributedProvider(EclipseExternalIndexSynchronizer.class);
 	}
 
 	/**
@@ -186,6 +235,91 @@ public class N4JSUiModule extends org.eclipse.n4js.ui.AbstractN4JSUiModule {
 	 */
 	public Provider<GitCloneSupplier> provideGitCloneSupplier() {
 		return Access.contributedProvider(GitCloneSupplier.class);
+	}
+
+	/**
+	 * Re-binds the {@link GitCloneSupplier} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<ExternalProjectCacheLoader> provideExternalProjectCacheLoader() {
+		return Access.contributedProvider(ExternalProjectCacheLoader.class);
+	}
+
+	/**
+	 * Re-binds the {@link ProjectStateChangeListener} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<ProjectStateChangeListener> provideProjectStateChangeListener() {
+		return Access.contributedProvider(ProjectStateChangeListener.class);
+	}
+
+	/**
+	 * Re-binds the {@link ExternalIndexUpdater} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<ExternalIndexUpdater> provideExternalIndexUpdater() {
+		return Access.contributedProvider(ExternalIndexUpdater.class);
+	}
+
+	/**
+	 * Re-binds the {@link ExternalLibraryBuildJobProvider} to the singleton instance declared in the contribution
+	 * module.
+	 */
+	public Provider<ExternalLibraryBuildJobProvider> provideExternalLibraryBuildJobProvider() {
+		return Access.contributedProvider(ExternalLibraryBuildJobProvider.class);
+	}
+
+	/**
+	 * Re-binds the {@link ExternalLibraryBuilder} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<ExternalLibraryBuilder> provideExternalLibraryBuilder() {
+		return Access.contributedProvider(ExternalLibraryBuilder.class);
+	}
+
+	/**
+	 * Re-binds the {@link BuildOrderComputer} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<BuildOrderComputer> provideBuildOrderComputer() {
+		return Access.contributedProvider(BuildOrderComputer.class);
+	}
+
+	/**
+	 * Re-binds the {@link BuildOrderComputer} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<NpmLogger> provideNpmLogger() {
+		return Access.contributedProvider(NpmLogger.class);
+	}
+
+	/**
+	 * Re-binds the {@link OutputStreamProvider} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<OutputStreamProvider> provideOutputStreamProvider() {
+		return Access.contributedProvider(OutputStreamProvider.class);
+	}
+
+	/**
+	 * Re-binds the {@link ConsoleOutputStreamProvider} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<ConsoleOutputStreamProvider> provideConsoleOutputStreamProvider() {
+		return Access.contributedProvider(ConsoleOutputStreamProvider.class);
+	}
+
+	/**
+	 * Re-binds the {@link ExternalProjectsCollector} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<ExternalProjectsCollector> provideExternalProjectsCollector() {
+		return Access.contributedProvider(ExternalProjectsCollector.class);
+	}
+
+	/**
+	 * Re-binds the {@link ExternalProjectProvider} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<ExternalProjectProvider> provideExternalProjectProvider() {
+		return Access.contributedProvider(ExternalProjectProvider.class);
+	}
+
+	/**
+	 * Re-binds the {@link ExternalProjectProvider} to the singleton instance declared in the contribution module.
+	 */
+	public Provider<RebuildWorkspaceProjectsScheduler> provideRebuildWorkspaceProjectsScheduler() {
+		return Access.contributedProvider(RebuildWorkspaceProjectsScheduler.class);
 	}
 
 	@Override
@@ -238,13 +372,6 @@ public class N4JSUiModule extends org.eclipse.n4js.ui.AbstractN4JSUiModule {
 	}
 
 	/**
-	 * Configure the IN4JSCore instance to use the implementation that is backed by the Eclipse workspace.
-	 */
-	public Class<? extends IN4JSCore> bindIN4JSCore() {
-		return IN4JSEclipseCore.class;
-	}
-
-	/**
 	 * Binds the external library preference store to use the {@link OsgiExternalLibraryPreferenceStore OSGi} one. This
 	 * provider binding is required to share the same singleton instance between modules, hence injectors.
 	 */
@@ -292,12 +419,27 @@ public class N4JSUiModule extends org.eclipse.n4js.ui.AbstractN4JSUiModule {
 	/**
 	 * Configure the IN4JSCore instance to use the implementation that is backed by the Eclipse workspace.
 	 */
+	public Provider<IN4JSCore> provideIN4JSCore() {
+		return Access.contributedProvider(IN4JSCore.class);
+	}
+
+	/**
+	 * Configure the IN4JSEclipseCore instance to use the implementation that is backed by the Eclipse workspace.
+	 */
 	public Provider<IN4JSEclipseCore> provideIN4JSEclipseCore() {
 		return Access.contributedProvider(IN4JSEclipseCore.class);
 	}
 
 	/**
-	 * Configure the IN4JSCore instance to use the implementation that is backed by the Eclipse workspace.
+	 * Configure the N4JSEclipseCore instance to use the implementation that is backed by the Eclipse workspace.
+	 */
+	public Provider<N4JSEclipseCore> provideN4JSEclipseCore() {
+		return Access.contributedProvider(N4JSEclipseCore.class);
+	}
+
+	/**
+	 * Configure the EclipseBasedN4JSWorkspace instance to use the implementation that is backed by the Eclipse
+	 * workspace.
 	 */
 	public Provider<EclipseBasedN4JSWorkspace> provideEclipseBasedN4JSWorkspace() {
 		return Access.contributedProvider(EclipseBasedN4JSWorkspace.class);
@@ -347,13 +489,6 @@ public class N4JSUiModule extends org.eclipse.n4js.ui.AbstractN4JSUiModule {
 	 */
 	public Class<? extends LastSegmentFinder> bindLastSegmentFinder() {
 		return SimpleLastSegmentFinder.class;
-	}
-
-	/**
-	 * Binds the output stream provider to the console based one in the UI.
-	 */
-	public Class<? extends OutputStreamProvider> bindOutputStreamProvider() {
-		return ConsoleOutputStreamProvider.class;
 	}
 
 	/**
@@ -680,5 +815,10 @@ public class N4JSUiModule extends org.eclipse.n4js.ui.AbstractN4JSUiModule {
 	/** Bind N4JS composite generator */
 	public Class<? extends ICompositeGenerator> bindICompositeGenerator() {
 		return N4JSCompositeGenerator.class;
+	}
+
+	/** Bind custom ReferenceSearchResultContentProvider. Workaround to fix GH-724. */
+	public Class<? extends ReferenceSearchResultContentProvider> bindReferenceSearchResultContentProvider() {
+		return MyReferenceSearchResultContentProvider.class;
 	}
 }
