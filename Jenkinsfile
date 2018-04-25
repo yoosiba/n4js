@@ -33,6 +33,9 @@ timestamps {
                      [$class  : 'BuildDiscarderProperty',
                         strategy: [$class: 'LogRotator', artifactDaysToKeepStr: keep10, artifactNumToKeepStr: keep5, daysToKeepStr: keep10, numToKeepStr: keep5]]])
 
+        npm_registry = env.NPM_REGISTRY
+        npm_auth_token_id = env.NPM_AUTH_TOKEN_ID
+
         String n4jsNodeLabel = "ide"
         node(n4jsNodeLabel) {
             try {
@@ -62,11 +65,11 @@ timestamps {
                     echo "should create ${N4JS_SNAPSHOT_MAVEN_REPO_FOLDER_WSREL}"
                     sh "mkdir ${N4JS_SNAPSHOT_MAVEN_REPO_FOLDER_WSREL}"
                     listDir(workspace)
-
                 }
 
 
                 stage('Build') {
+                    /*
                     def nodeHome = tool(name: n4jsNodejsVersion, type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation')
                     def xvfbBin = tool(name: 'default', type: 'org.jenkinsci.plugins.xvfb.XvfbInstallation')
 
@@ -98,21 +101,19 @@ timestamps {
                             }
                         }
                     }
-
+                    */
+                    // Publish npms in n4js-lib folder
                     withCredentials([
+                        string(credentialsId: npm_registry, variable: 'NPM_REGISTRY'),
                         string(credentialsId: npm_auth_token_id, variable: 'NPM_TOKEN')
                     ]) {
                       sh """
                         docker run --rm \
                                    -u \$(id -u):\$(id -g) \
-                                   -v \$(pwd):/opr \
-                                   -e HOME=/opr \
                                    -e NPM_TOKEN=\${NPM_TOKEN} \
-                                   -e NPM_REGISTRY=${npm_registry} \
-                                   -e OPR_NPM_VERSION_PREFIX=${npm_version_prefix} \
+                                   -e NPM_REGISTRY=${NPM_REGISTRY} \
                                    ${image.imageName()} \
-                                   /opr/bin/opr-build.sh \
-                                   --publish-canary
+                                   ${workspace}/${n4jsDir}/publish-shipped-code-npm.sh \
                         docker image rm ${image.imageName()}
                       """
                     }
