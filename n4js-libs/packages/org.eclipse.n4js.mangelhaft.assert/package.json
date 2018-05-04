@@ -1,4 +1,5 @@
 {
+  "name": "org.eclipse.n4js.mangelhaft.assert",
   "author": {
     "name": "NumberFour AG",
     "email": "npm@numberfour.eu"
