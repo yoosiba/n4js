@@ -2,8 +2,8 @@
 
 echo "Start publishing shipped code npms"
 
-# Navigate to shipped-code folder
-cd `dirname $0`/plugins/org.eclipse.n4js.external.libraries/shipped-code
+# Navigate to n4js-libs folder
+cd `dirname $0`/n4js-libs
 
 rm -rf node_modules
 
