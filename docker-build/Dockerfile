@@ -117,4 +117,5 @@ RUN apt-get update && \
 #
 # Install verdaccio and start it
 #
-RUN yarn global add verdaccio && verdaccio -l localhost:4873
+RUN yarn global add verdaccio
+RUN verdaccio -l localhost:4873 &
