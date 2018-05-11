@@ -113,3 +113,10 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         xauth \
         xvfb
+
+#
+# Install verdaccio and start it
+#
+yarn global add verdaccio
+
+verdaccio -l localhost:4873
