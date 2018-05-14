@@ -115,7 +115,6 @@ RUN apt-get update && \
         xvfb
 
 #
-# Install verdaccio and start it
+# Install verdaccio
 #
 RUN yarn global add verdaccio
-RUN verdaccio -l localhost:4873 &
