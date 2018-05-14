@@ -69,6 +69,20 @@ Contributors:
 							<cleanupDaemonThreads>false</cleanupDaemonThreads>
 						</configuration>
 					</execution>
+					<!-- Execute publish-shipped-code-npm -->
+					<execution>
+						<id>publish-n4js-libs</id>
+						<phase>test-compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>bash</executable>
+							<arguments>
+								<argument>${project.basedir}/../../publish-shipped-code-npm.sh</argument>
+							</arguments>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 		</plugins>
