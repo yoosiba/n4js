@@ -3,7 +3,7 @@
 	"private": true,
 	"devDependencies": {
 		"lerna": "^2.10.0",
-		"n4js-prepare-npm": "latest"
+		"npm-cli-login": "latest"
 	},
 	"scripts": {
 		"publish-canary": "./npm-publish-canary.sh"
