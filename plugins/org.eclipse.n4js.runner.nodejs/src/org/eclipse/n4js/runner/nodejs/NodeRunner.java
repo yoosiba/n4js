@@ -16,6 +16,7 @@ import static com.google.common.collect.Sets.newLinkedHashSet;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -24,8 +25,11 @@ import java.util.concurrent.ExecutionException;
 
 import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.n4js.binaries.IllegalBinaryStateException;
 import org.eclipse.n4js.binaries.nodejs.NodeJsBinary;
+import org.eclipse.n4js.projectModel.IN4JSCore;
+import org.eclipse.n4js.projectModel.IN4JSProject;
 import org.eclipse.n4js.runner.IExecutor;
 import org.eclipse.n4js.runner.IRunner;
 import org.eclipse.n4js.runner.RunConfiguration;
@@ -37,7 +41,9 @@ import org.eclipse.n4js.runner.extension.RuntimeEnvironment;
 import org.eclipse.n4js.utils.io.FileUtils;
 import org.eclipse.xtext.xbase.lib.Exceptions;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
+import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
@@ -89,6 +95,9 @@ public class NodeRunner implements IRunner {
 	@Inject
 	private Provider<NodeRunOptions> nodeRunOptionsProvider;
 
+	@Inject
+	IN4JSCore n4jsCore;
+
 	@Override
 	public RunConfiguration createConfiguration() {
 		return new RunConfiguration();
@@ -127,10 +136,18 @@ public class NodeRunner implements IRunner {
 			if (runConfig.getAdditionalPath() != null && !runConfig.getAdditionalPath().isEmpty())
 				paths.add(runConfig.getAdditionalPath());
 
+			if (runOptions.isRunInYarnWorkspaceFolder()) {
+				Path yarnProject = findYarnProjectPath(runConfig.getUserSelection());
+				if (yarnProject == null) {
+					throw new IllegalStateException("Cannot run because yarn workspace folder was not found for "
+							+ runConfig.getUserSelection().devicePath());
+				}
+				paths.add(yarnProject.resolve("node_modules").toAbsolutePath().toString());
+			}
+			
 			paths.add(workingDirectory.resolve("node_modules").toAbsolutePath().toString());
 
 			String nodePaths = on(NODE_PATH_SEP).join(paths);
-
 			Map<String, String> env = new LinkedHashMap<>();
 			env.putAll(runOptions.getEnvironmentVariables());
 
@@ -143,6 +160,29 @@ public class NodeRunner implements IRunner {
 			LOGGER.error(e);
 		}
 		return process;
+	}
+
+	private Path findYarnProjectPath(URI userSelection) {
+		try {
+			Optional<? extends IN4JSProject> optProject = n4jsCore.findProject(userSelection);
+			if (optProject.isPresent()) {
+				Path path = optProject.get().getLocationPath();
+				File folder = path.toFile();
+				while (folder.exists() && folder.isDirectory()) {
+					File packageJson = new File(folder, "package.json");
+					if (packageJson.exists() && packageJson.isFile()) {
+						String content = Files.toString(packageJson, Charset.forName("UTF-8"));
+						if (content.contains("\"workspaces\"")) { // folder is yarn workspace
+							return folder.toPath();
+						}
+					}
+					folder = folder.getParentFile();
+				}
+			}
+		} catch (Exception ex) {
+			// error
+		}
+		return null;
 	}
 
 	/**
@@ -159,6 +199,7 @@ public class NodeRunner implements IRunner {
 		runOptions.setCustomEnginePath(runConfig.getCustomEnginePath());
 		runOptions.setExecutionData(runConfig.getExecutionDataAsJSON());
 		runOptions.setSystemLoader(SystemLoaderInfo.fromString(runConfig.getSystemLoader()));
+		runOptions.setRunInYarnWorkspaceFolder(runConfig.isRunInYarnWorkspaceFolder());
 		return runOptions;
 	}
 }

@@ -118,6 +118,8 @@ public abstract class AbstractTesterLaunchShortcut implements ILaunchShortcut {
 						ILaunchConfiguration pconfig = projectLaunchConfig.get();
 						testConfig.setEnvironmentVariables(
 								pconfig.getAttribute(RunConfiguration.ENV_VARS, Collections.emptyMap()));
+						testConfig.setRunInYarnWorkspaceFolder(
+								pconfig.getAttribute(RunConfiguration.RUN_IN_YARN_WORKSPACE_FOLDER, false));
 						testConfig.setEngineOptions(pconfig.getAttribute(RunConfiguration.ENGINE_OPTIONS, ""));
 						testConfig.setCustomEnginePath(pconfig.getAttribute(RunConfiguration.CUSTOM_ENGINE_PATH, ""));
 						testConfig.setSystemLoader(pconfig.getAttribute(RunConfiguration.SYSTEM_LOADER, ""));

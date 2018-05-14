@@ -24,6 +24,7 @@ import org.eclipse.jface.viewers.ComboViewer
 import org.eclipse.jface.viewers.IStructuredSelection
 import org.eclipse.jface.viewers.StructuredSelection
 import org.eclipse.n4js.runner.SystemLoaderInfo
+import org.eclipse.swt.widgets.Button
 import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Group
 import org.eclipse.swt.widgets.Text
@@ -33,8 +34,10 @@ import static org.eclipse.n4js.runner.RunConfiguration.CUSTOM_ENGINE_PATH
 import static org.eclipse.n4js.runner.RunConfiguration.ENGINE_OPTIONS
 import static org.eclipse.n4js.runner.RunConfiguration.ENV_VARS
 import static org.eclipse.n4js.runner.RunConfiguration.SYSTEM_LOADER
+import static org.eclipse.n4js.runner.RunConfiguration.RUN_IN_YARN_WORKSPACE_FOLDER
 import static org.eclipse.n4js.runner.SystemLoaderInfo.*
 import static org.eclipse.swt.SWT.*
+import org.eclipse.swt.SWT
 
 /**
  * Launch configuration tab for configuring Node.js NODE_PATH and other options.
@@ -54,14 +57,17 @@ class NodejsLaunchConfigurationTab extends AbstractLaunchConfigurationTab {
 
 	/** Text field for storing the id of the system loader to use. (SystemJS, CommonJS) */
 	var ComboViewer systemLoaderCombo;
+	
+	var Button runInYarnWorkspaceFolderButton;
 
 	/**
-	 * Converts a map to text, each entry is put on a line, key and value are separated by "=". 
-	 * @param map may be empty
+	 * Converts a map to text, each entry is put on a line, key and value are separated by "=".
+	 * For convenience reasons, the map is sorted by key.
+	 * @param map may be empty or even null.
 	 */
 	static def String mapToString(Map<String, String> map) {
 		if (map===null) return "";
-		map.entrySet.join("\n", [it.key+"="+it.value]);
+		map.entrySet.sortWith[o1,o2|return o1.key.compareTo(o2.key)].join("\n", [it.key+"="+it.value]);
 	}
 
 	/**
@@ -95,6 +101,7 @@ class NodejsLaunchConfigurationTab extends AbstractLaunchConfigurationTab {
 		optionsText = childControl.createGroupWithMultiText('Node.js options');
 		environmentVariablesText = childControl.createGroupWithMultiText('Environment Variables (VAR=...)');
 		systemLoaderCombo = childControl.createGroupWithComboViewer('System loader');
+		runInYarnWorkspaceFolderButton = childControl.createCheckbox('Run in Yarn workspace folder');
 		systemLoaderCombo.input = SystemLoaderInfo.values;
 		control = childControl;
 	}
@@ -111,6 +118,7 @@ class NodejsLaunchConfigurationTab extends AbstractLaunchConfigurationTab {
 			val systemLoader = SystemLoaderInfo.fromString(configuration.getAttribute(SYSTEM_LOADER, ''));
 			systemLoaderCombo.selection = new StructuredSelection(
 				if (null === systemLoader) SYSTEM_JS else systemLoader);
+			runInYarnWorkspaceFolderButton.selection = configuration.getAttribute(RUN_IN_YARN_WORKSPACE_FOLDER, false);				
 		} catch (CoreException e) {
 			errorMessage = e.message;
 		}
@@ -129,6 +137,7 @@ class NodejsLaunchConfigurationTab extends AbstractLaunchConfigurationTab {
 			}
 		}
 		configuration.setAttribute(SYSTEM_LOADER, nullToEmpty(systemLoader.id));
+		configuration.setAttribute(RUN_IN_YARN_WORKSPACE_FOLDER, runInYarnWorkspaceFolderButton.selection);
 	}
 
 	override setDefaults(ILaunchConfigurationWorkingCopy configuration) {
@@ -141,6 +150,13 @@ class NodejsLaunchConfigurationTab extends AbstractLaunchConfigurationTab {
 		return new Text(parent, MULTI.bitwiseOr(BORDER)) => [
 			layoutData = GridDataFactory.swtDefaults.grab(true, true).align(FILL, FILL).create;
 			addModifyListener[updateLaunchConfigurationDialog];
+		];
+	}
+	
+	private def createCheckbox(Composite parent, String buttonText) {
+		return new Button(parent, SWT.CHECK) => [
+			layoutData = GridDataFactory.swtDefaults.grab(true, true).align(FILL, FILL).create;
+			text = buttonText
 		];
 	}
 

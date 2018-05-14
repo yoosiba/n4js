@@ -37,6 +37,7 @@ public class NodeRunOptions {
 	private String engineOptions;
 	private final Map<String, String> environmentVariables = new LinkedHashMap<>();
 	private SystemLoaderInfo systemLoader = null;
+	private boolean runInYarnWorkspaceFolder = false;
 
 	/** set name of the module to run. */
 	public void setExecModule(String mod) {
@@ -57,6 +58,21 @@ public class NodeRunOptions {
 	/** set string representing execution data */
 	public void setExecutionData(String data) {
 		this.data = data;
+	}
+
+	/**
+	 * If true, the runner is started in the computed yarn folder instead of the temporarily created working directory.
+	 * Also no links are created in the working directory, instead the node_module folder from the yarn project is used.
+	 */
+	public boolean isRunInYarnWorkspaceFolder() {
+		return runInYarnWorkspaceFolder;
+	}
+
+	/**
+	 * Sets yarn workspace mode, see {@link #isRunInYarnWorkspaceFolder()} for details.
+	 */
+	public void setRunInYarnWorkspaceFolder(boolean runInYarnWorkspaceFolder) {
+		this.runInYarnWorkspaceFolder = runInYarnWorkspaceFolder;
 	}
 
 	/**

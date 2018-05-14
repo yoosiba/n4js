@@ -154,7 +154,8 @@ public class NodeEngineCommandBuilder {
 				nodeRunOptions.getExecutionData(),
 				initModules,
 				execModule,
-				path2name);
+				path2name,
+				nodeRunOptions.isRunInYarnWorkspaceFolder());
 	}
 
 	/** Writes given content to a given file. */

@@ -12,9 +12,9 @@ package org.eclipse.n4js.runner.ui;
 
 import static org.eclipse.n4js.runner.ui.RunnerUiModule.RUNNER_UI_MODULE_ID;
 
-import com.google.inject.Injector;
-
 import org.eclipse.n4js.utils.N4ExecutableExtensionFactory;
+
+import com.google.inject.Injector;
 
 /**
  * Executable extension factory for the runner UI module.
@@ -32,7 +32,7 @@ public class RunnerUiExecutableExtensionFactory extends N4ExecutableExtensionFac
 	}
 
 	@Override
-	protected String getBunleId() {
+	protected String getBundleId() {
 		return RunnerUiActivator.PLUGIN_ID;
 	}
 

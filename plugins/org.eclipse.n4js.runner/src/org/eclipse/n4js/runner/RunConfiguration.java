@@ -102,6 +102,12 @@ public class RunConfiguration {
 	 */
 	public final static String EXEC_DATA_KEY__CJS = "cjs";
 
+	/**
+	 * Within the execution data passed to the exec module, this key is used to hold boolean flag whether to run in yarn
+	 * workspace folder.
+	 */
+	public final static String RUN_IN_YARN_WORKSPACE_FOLDER = "runInYarnWorkspaceFolder";
+
 	private String name;
 
 	private String runnerId;
@@ -136,6 +142,8 @@ public class RunConfiguration {
 	private String systemLoader;
 
 	private String additionalPath;
+
+	private boolean runInYarnWorkspaceFolder;
 
 	/**
 	 * Additional path to be added to NODE_PATH if needed
@@ -423,6 +431,21 @@ public class RunConfiguration {
 	}
 
 	/**
+	 * Flag indicating whether the run is performed in a Yarn workspace folder. In this case, no node_module folder with
+	 * linked content is created in the temporary working folder.
+	 */
+	public boolean isRunInYarnWorkspaceFolder() {
+		return runInYarnWorkspaceFolder;
+	}
+
+	/**
+	 * @see #isRunInYarnWorkspaceFolder()
+	 */
+	public void setRunInYarnWorkspaceFolder(boolean runInYarnWorkspaceFolder) {
+		this.runInYarnWorkspaceFolder = runInYarnWorkspaceFolder;
+	}
+
+	/**
 	 * Path to the file containing the low-level Javascript start-up code to launch, relative to its containing output
 	 * folder.
 	 * <p>
@@ -462,6 +485,7 @@ public class RunConfiguration {
 		// .entrySet().stream().map(entry -> entry.getKey() + "=" +
 		// entry.getValue()).collect(Collectors.joining("\n")));
 		result.put(SYSTEM_LOADER, getSystemLoader());
+		result.put(RUN_IN_YARN_WORKSPACE_FOLDER, isRunInYarnWorkspaceFolder());
 		return result;
 	}
 
@@ -485,6 +509,7 @@ public class RunConfiguration {
 		this.setEnvironmentVariables(getMap(map, ENV_VARS, true));
 
 		this.systemLoader = nullToEmpty(getString(map, SYSTEM_LOADER, true));
+		this.setRunInYarnWorkspaceFolder(getBoolean(map, RUN_IN_YARN_WORKSPACE_FOLDER));
 	}
 
 	/**

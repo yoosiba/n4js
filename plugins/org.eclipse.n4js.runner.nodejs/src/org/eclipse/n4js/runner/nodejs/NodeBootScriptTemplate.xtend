@@ -35,7 +35,7 @@ class NodeBootScriptTemplate {
 	 * {@code fileToInvoke} is {@code ./run.js}
 	 */
 	def static String getRunScriptCore(String pathNodeModules, String executionData, List<String> initModules,
-		String fileToInvoke, List<Pair<String, String>> path2names) '''
+		String fileToInvoke, List<Pair<String, String>> path2names, boolean runInYarnWorkspaceFolder) '''
 		«IF !path2names.isNullOrEmpty»
 			//link dependencies
 			const path = require('path')
