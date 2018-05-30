@@ -178,6 +178,10 @@ Contributors:
     </with>
 </activeWhen>
         </handler>
+        <handler
+              class="org.eclipse.n4js.ui.N4JSExecutableExtensionFactory:org.eclipse.n4js.ui.TEMP_InvestigatePackageJSONHandler"
+              commandId="org.eclipse.n4js.ui.commands.temp">
+        </handler>
     </extension>
     <extension point="org.eclipse.core.expressions.definitions">
         <definition id="org.eclipse.n4js.N4JS.Editor.opened">
@@ -301,6 +305,15 @@ Contributors:
             description="Resets the current and persisten state of all working set managers and their working sets to the default state"
             id="org.eclipse.n4js.ui.workingsets.ResetWorkingSetManagersHandler"
             name="Reset Working Sets">
+      </command>
+      <category
+            id="org.eclipse.n4js.ui.commands.category.temp"
+            name="TEMP Category">
+      </category>
+      <command
+            categoryId="org.eclipse.n4js.ui.commands.category.temp"
+            id="org.eclipse.n4js.ui.commands.temp"
+            name="TEMP Command">
       </command>
     </extension>
     <extension point="org.eclipse.ui.menus">
@@ -465,6 +478,17 @@ Contributors:
                   </test>
                </visibleWhen>
             </command>
+         </menuContribution>
+         <menuContribution
+               locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+            <menu
+                  id="org.eclipse.n4js.ui.menus.tempMenu"
+                  label="TEMP">
+               <command
+                     commandId="org.eclipse.n4js.ui.commands.temp"
+                     id="org.eclipse.n4js.ui.menus.tempCommand">
+               </command>
+            </menu>
          </menuContribution>
     </extension>
     <extension point="org.eclipse.ui.menus">

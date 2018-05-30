@@ -12,12 +12,15 @@ package org.eclipse.n4js.utils;
 
 import static org.eclipse.n4js.internal.N4JSModel.DIRECT_RESOURCE_IN_PROJECT_SEGMENTCOUNT;
 
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.common.util.Enumerator;
@@ -37,6 +40,7 @@ import org.eclipse.n4js.internal.FileBasedExternalPackageManager;
 import org.eclipse.n4js.internal.LazyProjectDescriptionHandle;
 import org.eclipse.n4js.json.JSON.JSONArray;
 import org.eclipse.n4js.json.JSON.JSONDocument;
+import org.eclipse.n4js.json.JSON.JSONFactory;
 import org.eclipse.n4js.json.JSON.JSONObject;
 import org.eclipse.n4js.json.JSON.JSONStringLiteral;
 import org.eclipse.n4js.json.JSON.JSONValue;
@@ -58,6 +62,7 @@ import org.eclipse.n4js.n4mf.VersionConstraint;
 import org.eclipse.n4js.n4mf.utils.parsing.ManifestValuesParsingUtil;
 import org.eclipse.n4js.projectModel.IN4JSCore;
 import org.eclipse.n4js.projectModel.IN4JSProject;
+import org.eclipse.xtext.util.StringInputStream;
 
 import com.google.common.base.Optional;
 import com.google.inject.Inject;
@@ -156,6 +161,33 @@ public class ProjectDescriptionHelper {
 		// ProjectDescription fromManifest = loadManifestAtLocation(location);
 		// ProjectDescription merged = mergeProjectDescriptions(fromPackageJSON, fromManifest);
 		// return merged;
+	}
+
+	public void injectManifestIntoPackageJSON(URI location) {
+		ProjectDescription pdFromManifest = loadManifestAtLocation(location);
+		JSONDocument packageJSON = loadPackageJSONAtLocation(location);
+		JSONObject root = packageJSON != null && packageJSON.getContent() instanceof JSONObject
+				? (JSONObject) packageJSON.getContent()
+				: null;
+		if (root == null) {
+			root = JSONFactory.eINSTANCE.createJSONObject();
+		}
+		ProjectDescriptionExporter.injectIntoPackageJSON(root, pdFromManifest);
+		IFile file = workspace
+				.getFile(new Path(location.appendSegment(IN4JSProject.PACKAGE_JSON).toPlatformString(true)));
+		try (StringWriter w = new StringWriter()) {
+			ProjectDescriptionExporter.writePackageJSON(root, w);
+			try (InputStream in = new StringInputStream(w.toString())) {
+				if (!file.exists()) {
+					file.create(in, true, null);
+				} else {
+					file.setContents(in, true, false, null);
+				}
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private JSONDocument loadPackageJSONAtLocation(URI location) {
